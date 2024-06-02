@@ -57,13 +57,27 @@ public class Client extends Thread {
             fileWriter.flush();
             writer.flush();
 
+
+
             //TODO send file
+            File fileForSending = new File("./filename.txt");
+            long fileSize = fileForSending.length();
+
+            writer.write("221046:fileSize:" + fileSize + "\n");
+            writer.flush();
+
 
             writer.write("221046:attach:filename.txt\n");
             writer.flush();
 
-            writer.write("221046:fileSize:135\n");
-            writer.flush();
+            FileInputStream fileInputStream = new FileInputStream(fileForSending);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead=fileInputStream.read(buffer)) != -1) {
+                socket.getOutputStream().write(buffer, 0, bytesRead);
+            }
+            fileInputStream.close();
+            socket.getOutputStream().flush();
 
 
             writer.write("221046:over\n");

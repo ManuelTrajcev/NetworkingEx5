@@ -4,6 +4,7 @@ import java.util.Random;
 
 public class Worker extends Thread {
     private Socket socket;
+    private long fileSize;
 
     public Worker(Socket socket) {
         this.socket = socket;
@@ -48,8 +49,28 @@ public class Worker extends Thread {
                         writer.flush();
                         System.out.println("SERVER: closing connection...");
                         break;
+                    } else if (parts[1].equals("fileSize")) {
+                        System.out.println("SERVER: file size " + parts[2]);
+                        fileSize = Long.parseLong(parts[2]);
                     } else if (parts[1].equals("attach")) {
                         System.out.println("SERVER: client sending file");
+                        //TODO receiving file
+                        File file = new File("./received_" + parts[2]);
+                        FileOutputStream fos = new FileOutputStream(file);
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        int totalBytesRead = 0;
+                        while (totalBytesRead < fileSize && (bytesRead = socket.getInputStream().read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+                        }
+                        System.out.println("SERVER: file received successfully");
+                        fos.flush();
+                        fos.close();
+                    } else {
+                        System.out.println("SERVER: unrecognized message");
+                        writer.write("unrecognized message");
+                        writer.flush();
                     }
                 }
             }
