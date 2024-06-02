@@ -25,27 +25,62 @@ public class Client extends Thread {
     }
 
     private void execute() throws IOException {
-        Socket socket = new Socket(serverAddress.getHostAddress(), serverPort);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile)));
-
-        writer.write("hello:221046\n");
-        writer.flush();
-
-        String response = reader.readLine();
-        while (response.equals("ERROR WHILE LOGGING IN")) {
-            System.out.println("CLIENT received: " + response);
+        Socket socket = null;
+        BufferedWriter writer = null;
+        BufferedReader reader = null;
+        BufferedWriter fileWriter = null;
+        try {
             socket = new Socket(serverAddress.getHostAddress(), serverPort);
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            fileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile)));
 
             writer.write("hello:221046\n");
             writer.flush();
-            response = reader.readLine();
-        }
-        System.out.println("CLIENT received: " + response);
 
+            String response = reader.readLine();
+            while (response.equals("ERROR WHILE LOGGING IN")) {
+                fileWriter.append(response + "\n");
+                fileWriter.flush();
+                writer.flush();
+                System.out.println("CLIENT received: " + response);
+                socket = new Socket(serverAddress.getHostAddress(), serverPort);
+                writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                writer.write("hello:221046\n");
+                writer.flush();
+                response = reader.readLine();
+            }
+            System.out.println("CLIENT received: " + response);
+            fileWriter.append(response + "\n");
+            fileWriter.flush();
+            writer.flush();
+
+            //TODO send file
+
+            writer.write("221046:attach:filename.txt\n");
+            writer.flush();
+
+            writer.write("221046:fileSize:135\n");
+            writer.flush();
+
+
+            writer.write("221046:over\n");
+            writer.flush();
+            response = reader.readLine();
+            fileWriter.append(response + "\n");
+            fileWriter.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            writer.flush();
+            writer.close();
+            fileWriter.flush();
+            fileWriter.close();
+            reader.close();
+            socket.close();
+        }
     }
 
     public static void main(String[] args) {
